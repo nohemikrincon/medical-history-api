@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Propietario {
+  id           Int         @id @default(autoincrement())
+  nombre       String
+  direccion    String
+  telefono     String
+  correo       String?
+  mascotas     Mascota[]
+  creadoEn     DateTime    @default(now())
+}
+
+model Mascota {
+  id               Int               @id @default(autoincrement())
+  nombre           String
+  especie          String
+  raza             String
+  edad             Int
+  sexo             String
+  propietarioId    Int
+  propietario      Propietario       @relation(fields: [propietarioId], references: [id])
+  historialesMedicos HistorialMedico[]
+  vacunas          Vacuna[]
+  citas            Cita[]
+  creadoEn         DateTime          @default(now())
+}
+
+model Vacuna {
+  id         Int      @id @default(autoincrement())
+  nombre     String
+  fecha      DateTime
+  mascotaId  Int
+  mascota    Mascota  @relation(fields: [mascotaId], references: [id])
+}
+
+model Veterinario {
+  id         Int       @id @default(autoincrement())
+  nombre     String
+  especialidad String?
+  horario    String?
+  citas      Cita[]
+}
+
+model Cita {
+  id             Int         @id @default(autoincrement())
+  mascotaId      Int
+  veterinarioId  Int
+  fecha          DateTime
+  tipo           String      // consulta, cirugía, etc.
+  notas          String?
+  mascota        Mascota     @relation(fields: [mascotaId], references: [id])
+  veterinario    Veterinario @relation(fields: [veterinarioId], references: [id])
+  factura        Factura?
+}
+
+model HistorialMedico {
+  id              Int         @id @default(autoincrement())
+  mascotaId       Int
+  diagnostico     String
+  tratamiento     String
+  observaciones   String?
+  fechaVisita     DateTime
+  examenes        ResultadoExamen[]
+  recetas         Receta[]
+  mascota         Mascota     @relation(fields: [mascotaId], references: [id])
+}
+
+model ResultadoExamen {
+  id               Int            @id @default(autoincrement())
+  historialId      Int
+  tipo             String         // laboratorio, rayos X, etc.
+  resultado        String
+  fecha            DateTime
+  historialMedico  HistorialMedico @relation(fields: [historialId], references: [id])
+}
+
+model Receta {
+  id              Int         @id @default(autoincrement())
+  historialId     Int
+  medicinaId      Int
+  dosis           String
+  frecuencia      String
+  duracion        String
+  historialMedico HistorialMedico @relation(fields: [historialId], references: [id])
+  medicina        Medicina        @relation(fields: [medicinaId], references: [id])
+}
+
+model Medicina {
+  id                 Int         @id @default(autoincrement())
+  nombre             String
+  stock              Int
+  fechaVencimiento   DateTime
+  alertaVencimiento  Boolean     @default(false)
+  recetas            Receta[]
+}
+
+model Factura {
+  id           Int         @id @default(autoincrement())
+  citaId       Int         @unique
+  fecha        DateTime    @default(now())
+  monto        Float
+  metodoPago   String      // efectivo, tarjeta, transferencia
+  cita         Cita        @relation(fields: [citaId], references: [id])
+}
+
+model Reporte {
+  id           Int         @id @default(autoincrement())
+  titulo       String
+  descripcion  String?
+  generadoEn   DateTime    @default(now())
+}
